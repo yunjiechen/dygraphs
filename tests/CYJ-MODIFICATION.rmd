@@ -1,0 +1,110 @@
+---
+title: "Modification to the package"
+author: "yunjie"
+date: "2015年5月31日"
+output: html_document
+---
+
+To show milliseconds, change following code in the utils.R
+
+```{r, eval=FALSE}
+asISO8601Time <- function(x) {
+  if (!inherits(x, "POSIXct"))
+    x <- as.POSIXct(x, tz = "GMT")
+  #format(x, format="%04Y-%m-%dT%H:%M:%SZ", tz='GMT')
+  #cyj: change to include million second
+  format(x, format="%04Y-%m-%dT%H:%M:%OS3Z", tz='GMT')
+}
+
+```
+
+Add my js function to dygraphs-plugin.js and update dependence file dygraphs.yaml
+```{r, eval=FALSE}
+  - name: dygraphsPlugin
+    version: 1.0.1
+    src: "htmlwidgets"
+    script: dygraphs-plugin.js
+```
+
+Add Shift+dbclick function to dygraph-combined.js
+```{c, eval=F}
+Dygraph.Interaction.zoomOut2 = function(c, b, a) {
+    //YC zom out*2
+    var h = b.xAxisRange()[0];
+    var i = b.xAxisRange()[1];
+    var j = h - (i-h)/2;
+    var k = i + (i-h)/2;
+    var p = b.xAxisExtremes()[0];
+    var q = b.xAxisExtremes()[1];
+    if (k - j > q - p) {
+      j = p; k = q;
+    }
+    else if (j < p) {
+      k = k + (p - j);
+      j = p;
+    }
+    else if (k > q) {
+      j = j - (k - q);
+      k = q;
+    }
+    b.doZoomXDates_(j, k);
+};
+
+```
+
+
+
+
+Add interactionModel.R to change interaction behavior (Not useful)
+```{r, eval=FALSE}
+#' interactionModel
+#' 
+#' interactionModel
+#' 
+#' @param dygraph Dygraph to add interactionModel to
+#'   
+#' @return A dygraph that displays a range selector
+#'   
+#' @note cyj edit
+#' \href{http://rstudio.github.io/dygraphs/gallery-roll-periods.html}{online
+#' documentation} for additional details and examples.
+#' 
+#' @export
+dyInteractionModel <- function(dygraph) {
+  
+  interactionModel <- list()
+  #interactionModel$mousewheel <- readLines("inst/htmlwidgets/mousescroll.js")
+  interactionModel$mousewheel <- 
+  JS(
+  "function scrollV3(event, g, context) {", 
+  "  if (lastClickedGraph != g) {", 
+  "    return;", 
+  "  }", 
+  "  var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;", 
+  "  // For me the normalized value shows 0.075 for one click. If I took", 
+  "  // that verbatim, it would be a 7.5%.", 
+  "  var percentage = normal / 50;", 
+  "  ", 
+  "  if (!(event.offsetX && event.offsetY)){", 
+  "    event.offsetX = event.layerX - event.target.offsetLeft;", 
+  "    event.offsetY = event.layerY - event.target.offsetTop;", 
+  "  }", 
+  "  ", 
+  "  var percentages = offsetToPercentage(g, event.offsetX, event.offsetY);", 
+  "  var xPct = percentages[0];", 
+  "  var yPct = percentages[1];", 
+  "  ", 
+  "  zoom(g, percentage, xPct, yPct);", 
+  "  Dygraph.cancelEvent(event);", 
+  "}")
+  
+  
+  # merge roller
+  dygraph$x$attrs <- mergeLists(dygraph$x$attrs, interactionModel)
+  
+  # return modified dygraph
+  dygraph
+}
+
+```
+
