@@ -5372,8 +5372,8 @@ Dygraph.Interaction.zoomOut2 = function(c, b, a) {
     //YC zom out*2
     var h = b.xAxisRange()[0];
     var i = b.xAxisRange()[1];
-    var j = h - (i-h)/2;
-    var k = i + (i-h)/2;
+    var j = h - (i-h); //3 folds
+    var k = i + (i-h); //3 folds
     var p = b.xAxisExtremes()[0];
     var q = b.xAxisExtremes()[1];
     if (k - j > q - p) {
